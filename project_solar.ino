@@ -23,7 +23,9 @@ unsigned long   Total_Production;
 unsigned long   Total_Time;
 float           Today_Production;
 unsigned int    Today_Time;
-float           CT_Power;
+float           CT_Power;         // 0x29
+int             MODULE_TEMP;      // 0x1B
+int             INVERTER_TEMP;    // 0x1C
 
 
 #define BLYNK_PRINT Serial
@@ -70,27 +72,15 @@ bool fetch_data(){
     Today_Production  = (unsigned int)node.getResponseBuffer(0x19)*0.01;
     Today_Time        = (unsigned int)node.getResponseBuffer(0x1A);
     CT_Power          = (int16_t)node.getResponseBuffer(0x29)*0.01;
+    MODULE_TEMP       = (int16_t)node.getResponseBuffer(0x1B);
+    INVERTER_TEMP     = (int16_t)node.getResponseBuffer(0x1C);
     return true;
   }
   return false;
 }
 
 void blynk_update(){
-  terminal.println("Trying to fetch.");
   if(fetch_data()){
-//    terminal.println("Data fetched successfully.");
-//    terminal.println(PV_Voltage);
-//    terminal.println(PV_Current);
-//    terminal.println(PV_Power);
-//    terminal.println(Active_Power);
-//    terminal.println(Reactive_Power);
-//    terminal.println(Grid_Frequency);
-//    terminal.println(Voltage);
-//    terminal.println(Current);
-//    terminal.println(Total_Production);
-//    terminal.println(Total_Time);
-//    terminal.println(Today_Production);
-//    terminal.println(Today_Time);
     switch(Inverter_State){
       case 0:
         terminal.println("Waiting");
@@ -115,7 +105,6 @@ void blynk_update(){
         Blynk.notify("Permanent Fault");
         break;
     }
-    terminal.println("Success!");
     Blynk.virtualWrite(V1, Voltage);
     Blynk.virtualWrite(V2, Current);
     Blynk.virtualWrite(V3, Active_Power);
@@ -129,6 +118,8 @@ void blynk_update(){
     Blynk.virtualWrite(V11, Total_Production);
     Blynk.virtualWrite(V12, Total_Time);
     Blynk.virtualWrite(V14, CT_Power);
+    Blynk.virtualWrite(V15, MODULE_TEMP);
+    Blynk.virtualWrite(V16, INVERTER_TEMP);
     led.on();
     terminal.println("\n--debug--");
     for(int i = START_ADDRESS; i <= STOP_ADDRESS; i++){
@@ -153,9 +144,9 @@ void setup(){
   node.preTransmission(preTransmission);
   node.postTransmission(postTransmission);
 
-  Blynk.begin(AUTH, MAIN_SSID, MAIN_PASS, "<local blynk server ip>eg. 192.168.2.20", 8080);
+  Blynk.begin(AUTH, MAIN_SSID, MAIN_PASS, "192.168.2.112", 8080);
   terminal.clear();
-  timer.setInterval(1000l, blynk_update); //updates data on blynk every second
+  timer.setInterval(2000l, blynk_update); //updates data on blynk every second
 }
 
 void loop(){
